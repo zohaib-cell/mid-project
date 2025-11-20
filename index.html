@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Analyzer - Upload Your Resume</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(138, 43, 226, 0.5);
+            border-radius: 50%;
+            animation: float 15s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+
+        /* Header */
+        header {
+            position: relative;
+            z-index: 10;
+            padding: 2rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .creators {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+
+        /* Main Container */
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .upload-section:hover {
+            transform: translateY(-5px);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Drag and Drop Zone */
+        .drop-zone {
+            border: 3px dashed rgba(138, 43, 226, 0.5);
+            border-radius: 15px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(138, 43, 226, 0.05);
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .drop-zone:hover {
+            border-color: #8a2be2;
+            background: rgba(138, 43, 226, 0.1);
+            transform: scale(1.02);
+        }
+
+        .drop-zone.dragover {
+            border-color: #f093fb;
+            background: rgba(240, 147, 251, 0.2);
+            transform: scale(1.05);
+        }
+
+        .drop-zone-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .drop-zone p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0, 255, 127, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 127, 0.3);
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Skills Section */
+        .skills-section {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .skill-input-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .skill-input {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(138, 43, 226, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .skill-input:focus {
+            outline: none;
+            border-color: #8a2be2;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
+        }
+
+        .skill-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Skill Tags Display */
+        .selected-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+            min-height: 50px;
+        }
+
+        .skill-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: popIn 0.3s ease;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .skill-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .skill-tag .remove:hover {
+            transform: scale(1.2);
+            color: #ff6b6b;
+        }
+
+        /* Suggested Skills */
+        .suggestions-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .skill-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .category {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .category:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .category-title {
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #f093fb;
+        }
+
+        .suggestion-chip {
+            display: inline-block;
+            background: rgba(138, 43, 226, 0.2);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            margin: 0.3rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .suggestion-chip:hover {
+            background: rgba(138, 43, 226, 0.4);
+            transform: scale(1.05);
+        }
+
+        .suggestion-chip.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        /* Analyze Button */
+        .analyze-btn {
+            width: 100%;
+            padding: 1.2rem;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+            margin-top: 2rem;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(245, 87, 108, 0.6);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2rem;
+            }
+
+            .upload-section, .skills-section {
+                padding: 2rem 1.5rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .skill-categories {
+                grid-template-columns: 1fr;
+            }
+
+            .drop-zone {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">CV ANALYZER</div>
+        <div class="creators">Created by Zohaib, Affan & Moiz</div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h2 class="section-title">📄 Upload Your Resume</h2>
+            
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-content">
+                    <div class="upload-icon">📁</div>
+                    <p>Drag & drop your CV here</p>
+                    <p style="font-size: 0.9rem; color: rgba(255,255,255,0.5);">or</p>
+                    <button class="file-btn" onclick="document.getElementById('fileInput').click()">
+                        Browse Files
+                    </button>
+                    <p style="font-size: 0.85rem; margin-top: 1rem; color: rgba(255,255,255,0.4);">
+                        Supported: PDF, DOCX (Max 5MB)
+                    </p>
+                </div>
+            </div>
+
+            <input type="file" id="fileInput" class="file-input" accept=".pdf,.docx">
+            
+            <div class="file-info" id="fileInfo">
+                <strong>✅ File Selected:</strong>
+                <p id="fileName"></p>
+            </div>
+        </div>
+
+        <!-- Skills Section -->
+        <div class="skills-section">
+            <h2 class="section-title">🎯 Required Skills</h2>
+            
+            <div class="skill-input-container">
+                <input 
+                    type="text" 
+                    class="skill-input" 
+                    id="skillInput" 
+                    placeholder="Type a skill and press Enter (e.g., Python, Leadership, SQL)"
+                >
+            </div>
+
+            <div class="selected-skills" id="selectedSkills"></div>
+
+            <div class="suggestions-title">💡 Quick Select Popular Skills</div>
+            
+            <div class="skill-categories">
+                <div class="category">
+                    <div class="category-title">💻 Software Dev</div>
+                    <div class="suggestion-chip" data-skill="Python">Python</div>
+                    <div class="suggestion-chip" data-skill="JavaScript">JavaScript</div>
+                    <div class="suggestion-chip" data-skill="React">React</div>
+                    <div class="suggestion-chip" data-skill="Node.js">Node.js</div>
+                    <div class="suggestion-chip" data-skill="SQL">SQL</div>
+                    <div class="suggestion-chip" data-skill="Git">Git</div>
+                </div>
+
+                <div class="category">
+                    <div class="category-title">🎨 Design</div>
+                    <div class="suggestion-chip" data-skill="Figma">Figma</div>
+                    <div class="suggestion-chip" data-skill="Photoshop">Photoshop</div>
+                    <div class="suggestion-chip" data-skill="UI/UX">UI/UX</div>
+                    <div class="suggestion-chip" data-skill="Illustrator">Illustrator</div>
+                    <div class="suggestion-chip" data-skill="Sketch">Sketch</div>
+                </div>
+
+                <div class="category">
+                    <div class="category-title">📊 Business</div>
+                    <div class="suggestion-chip" data-skill="Project Management">Project Management</div>
+                    <div class="suggestion-chip" data-skill="Leadership">Leadership</div>
+                    <div class="suggestion-chip" data-skill="Communication">Communication</div>
+                    <div class="suggestion-chip" data-skill="Excel">Excel</div>
+                    <div class="suggestion-chip" data-skill="Analysis">Analysis</div>
+                </div>
+
+                <div class="category">
+                    <div class="category-title">📱 Marketing</div>
+                    <div class="suggestion-chip" data-skill="SEO">SEO</div>
+                    <div class="suggestion-chip" data-skill="Content Writing">Content Writing</div>
+                    <div class="suggestion-chip" data-skill="Social Media">Social Media</div>
+                    <div class="suggestion-chip" data-skill="Google Ads">Google Ads</div>
+                    <div class="suggestion-chip" data-skill="Analytics">Analytics</div>
+                </div>
+            </div>
+
+            <button class="analyze-btn" id="analyzeBtn" disabled>
+                🚀 Analyze My Resume
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // File Upload Handling
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        let uploadedFile = null;
+
+        // Drag and drop handlers
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a PDF or DOCX file');
+                return;
+            }
+
+            if (file.size > maxSize) {
+                alert('File size must be less than 5MB');
+                return;
+            }
+
+            uploadedFile = file;
+            fileName.textContent = file.name;
+            fileInfo.classList.add('show');
+            checkFormComplete();
+        }
+
+        // Skills Handling
+        const skillInput = document.getElementById('skillInput');
+        const selectedSkillsContainer = document.getElementById('selectedSkills');
+        const selectedSkills = new Set();
+
+        skillInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && skillInput.value.trim()) {
+                addSkill(skillInput.value.trim());
+                skillInput.value = '';
+            }
+        });
+
+        // Handle suggestion chip clicks
+        document.querySelectorAll('.suggestion-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const skill = chip.getAttribute('data-skill');
+                if (selectedSkills.has(skill)) {
+                    removeSkill(skill);
+                    chip.classList.remove('selected');
+                } else {
+                    addSkill(skill);
+                    chip.classList.add('selected');
+                }
+            });
+        });
+
+        function addSkill(skill) {
+            if (!selectedSkills.has(skill)) {
+                selectedSkills.add(skill);
+                const tag = document.createElement('div');
+                tag.className = 'skill-tag';
+                tag.innerHTML = `
+                    <span>${skill}</span>
+                    <span class="remove" onclick="removeSkillByElement('${skill}', this)">✕</span>
+                `;
+                selectedSkillsContainer.appendChild(tag);
+                
+                // Mark suggestion chip as selected if exists
+                document.querySelectorAll('.suggestion-chip').forEach(chip => {
+                    if (chip.getAttribute('data-skill') === skill) {
+                        chip.classList.add('selected');
+                    }
+                });
+                
+                checkFormComplete();
+            }
+        }
+
+        function removeSkill(skill) {
+            selectedSkills.delete(skill);
+            checkFormComplete();
+        }
+
+        window.removeSkillByElement = function(skill, element) {
+            element.parentElement.remove();
+            removeSkill(skill);
+            
+            // Unmark suggestion chip
+            document.querySelectorAll('.suggestion-chip').forEach(chip => {
+                if (chip.getAttribute('data-skill') === skill) {
+                    chip.classList.remove('selected');
+                }
+            });
+        };
+
+        function checkFormComplete() {
+            analyzeBtn.disabled = !(uploadedFile && selectedSkills.size > 0);
+        }
+
+        // Analyze Button Click
+        analyzeBtn.addEventListener('click', () => {
+            if (!uploadedFile || selectedSkills.size === 0) {
+                alert('Please upload a CV and add at least one skill');
+                return;
+            }
+
+            // Store data in localStorage for next page
+            localStorage.setItem('uploadedFileName', uploadedFile.name);
+            localStorage.setItem('requiredSkills', JSON.stringify([...selectedSkills]));
+            
+            // In real implementation, you would send this data to backend:
+            // const formData = new FormData();
+            // formData.append('cv_file', uploadedFile);
+            // formData.append('required_skills', JSON.stringify([...selectedSkills]));
+            // 
+            // fetch('YOUR_BACKEND_API/analyze_cv', {
+            //     method: 'POST',
+            //     body: formData
+            // })
+            // .then(response => response.json())
+            // .then(data => {
+            //     localStorage.setItem('analysisResults', JSON.stringify(data));
+            //     window.location.href = 'results.html';
+            // });
+
+            // For demo, redirect to results page after brief delay
+            analyzeBtn.textContent = '🔄 Processing...';
+            analyzeBtn.disabled = true;
+            
+            setTimeout(() => {
+                window.location.href = 'results.html';
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
