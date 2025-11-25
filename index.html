@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium WPM Tester</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+
+    <!-- CAPTCHA Modal -->
+    <div class="captcha-modal" id="captchaModal">
+        <div class="captcha-container">
+            <h2>🔒 Verify You're Human</h2>
+            <p>Please enter the CAPTCHA below to start the test</p>
+            <div class="captcha-display">
+                <span id="captchaText">Loading...</span>
+                <button class="refresh-captcha" onclick="generateCaptcha()">🔄</button>
+            </div>
+            <input type="text" id="captchaInput" placeholder="Enter CAPTCHA" class="captcha-input">
+            <div class="captcha-error" id="captchaError"></div>
+            <button class="verify-btn" onclick="verifyCaptcha()">Verify & Start</button>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-content">
+            <h1>⚡ Speed Type</h1>
+            <p class="subtitle">Test your typing speed with a project made by Zohaib, Affan and Moiz</p>
+            <button class="start-btn" onclick="showCaptcha()">Start Typing Test</button>
+            <div class="global-stats" id="globalStats">
+                <h3>🌍 Global Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-num" id="totalTests">0</span>
+                        <span class="stat-text">Total Tests</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="avgWpm">0</span>
+                        <span class="stat-text">Average WPM</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="highestWpm">0</span>
+                        <span class="stat-text">Highest WPM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Test Section -->
+    <section class="test-section" id="testSection">
+        <div class="test-container">
+            <div class="time-selector">
+                <button class="time-btn active" onclick="selectTime(15)">15s</button>
+                <button class="time-btn" onclick="selectTime(30)">30s</button>
+                <button class="time-btn" onclick="selectTime(60)">60s</button>
+                <button class="time-btn" onclick="selectTime(90)">90s</button>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat">
+                    <span class="stat-value" id="timer">60</span>
+                    <span class="stat-label">Time</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="wpm">0</span>
+                    <span class="stat-label">WPM</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="accuracy">100</span>
+                    <span class="stat-label">Accuracy %</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="errors">0</span>
+                    <span class="stat-label">Errors</span>
+                </div>
+            </div>
+
+            <div class="text-display" id="textDisplay"></div>
+            <input type="text" class="input-field" id="inputField" placeholder="Start typing here..." disabled>
+
+            <div class="control-btns">
+                <button class="ctrl-btn" onclick="newParagraph()">🔄 New Paragraph</button>
+                <button class="ctrl-btn" onclick="resetTest()">↻ Reset</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results-section" id="resultsSection">
+        <div class="results-container">
+            <div class="results-header">
+                <h2>🎉 Test Complete!</h2>
+            </div>
+
+            <div class="main-results">
+                <div class="result-card">
+                    <h3 id="finalWpm">0</h3>
+                    <p>Words Per Minute</p>
+                </div>
+                <div class="result-card">
+                    <h3 id="finalAccuracy">0%</h3>
+                    <p>Accuracy</p>
+                </div>
+                <div class="result-card">
+                    <h3 id="finalCorrect">0</h3>
+                    <p>Correct Words</p>
+                </div>
+                <div class="result-card">
+                    <h3 id="finalErrors">0</h3>
+                    <p>Total Errors</p>
+                </div>
+            </div>
+
+            <!-- Leaderboard Tabs -->
+            <div class="leaderboard-tabs">
+                <button class="tab-btn active" onclick="showTab('personal')">📊 Your History</button>
+                <button class="tab-btn" onclick="showTab('global')">🌍 Global Leaderboard</button>
+            </div>
+
+            <!-- Personal History Section -->
+            <div class="history-section" id="personalHistory">
+                <h3>📊 Your Best Scores</h3>
+                <div class="history-grid" id="historyGrid"></div>
+            </div>
+
+            <!-- Global Leaderboard Section -->
+            <div class="history-section" id="globalLeaderboard" style="display: none;">
+                <h3>🌍 Top 10 Global Scores</h3>
+                <div class="history-grid" id="leaderboardGrid"></div>
+            </div>
+
+            <div class="control-btns">
+                <button class="ctrl-btn" onclick="retakeTest()">↻ Take Another Test</button>
+                <button class="ctrl-btn" onclick="goHome()">🏠 Home</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // API Base URL - Change this if your backend runs on different host/port
+        const API_URL = 'http://localhost:8000';
+
+        // Custom Cursor
+        const cursor = document.querySelector('.cursor');
+        const follower = document.querySelector('.cursor-follower');
+
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            
+            setTimeout(() => {
+                follower.style.left = e.clientX + 'px';
+                follower.style.top = e.clientY + 'px';
+            }, 100);
+        });
+
+        // Paragraphs
+        let paragraphs = [
+            "The quick brown fox jumps over the lazy dog every single morning. This sentence helps me warm up my fingers and focus on accuracy. I try to type it smoothly without rushing, making sure every key is pressed correctly. Slow and steady always builds better technique.",
+            "Respectfully, if you're not hitting that WPM goal, you're kinda sus. But it's giving growth mindset energy so we stan the effort. The way you're typing is ate, no crumbs left. This is your moment to shine and be iconic. Remember, we're all just NPCs in someone else's story, but you're the main character here. Slay the keyboard bestie.",
+            "Okay but like, typing fast is literally a flex in this economy. Your keyboard is probably screaming right now but that's the vibe we're going for. This hits different when you're in the zone. No thoughts, just vibes and finger movement. You're doing amazing sweetie, keep that energy up. The algorithm is watching and it's impressed.",
+            "Listen, I'm not saying you're the GOAT at typing, but you're definitely giving champion energy. The dedication is unmatched, the speed is incredible, and the accuracy is chef's kiss. This is what peak performance looks like fam. You understood the assignment and came prepared. Respectfully, you're carrying the team right now.",
+            "Pov: you're absolutely crushing this typing test and everyone is shook. The way your fingers are moving is giving professional typist realness. This is so fetch and it's definitely going to happen. You're living rent free in everyone's head with these skills. The vibes are immaculate and the energy is unmatched bestie.",
+            "Bestie wake up, new typing speed just dropped and it's giving everything. The commitment to excellence is real and we're here for it. Your typing aura is literally glowing right now. This is the content we signed up for. No skips, all hits, just pure typing excellence. You're the moment and the movement."
+        ];
+
+        let selectedTime = 60;
+        let timeLeft = selectedTime;
+        let timerInterval;
+        let currentParagraph = '';
+        let charIndex = 0;
+        let errors = 0;
+        let correctChars = 0;
+        let isTestActive = false;
+        let testStarted = false;
+        let captchaSessionId = null;
+
+        // ==================== CAPTCHA FUNCTIONS ====================
+
+        async function generateCaptcha() {
+            try {
+                const response = await fetch(`${API_URL}/api/captcha/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                captchaSessionId = data.session_id;
+                document.getElementById('captchaText').textContent = data.captcha_text;
+                document.getElementById('captchaError').textContent = '';
+            } catch (error) {
+                console.error('Error generating CAPTCHA:', error);
+                document.getElementById('captchaText').textContent = 'Error loading CAPTCHA';
+            }
+        }
+
+        function showCaptcha() {
+            document.getElementById('captchaModal').classList.add('active');
+            generateCaptcha();
+            document.getElementById('captchaInput').value = '';
+            document.getElementById('captchaInput').focus();
+        }
+
+        async function verifyCaptcha() {
+            const captchaInput = document.getElementById('captchaInput').value;
+            
+            if (!captchaInput) {
+                document.getElementById('captchaError').textContent = 'Please enter the CAPTCHA';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/captcha/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: captchaSessionId,
+                        captcha_input: captchaInput
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.verified) {
+                    document.getElementById('captchaModal').classList.remove('active');
+                    startTest();
+                } else {
+                    document.getElementById('captchaError').textContent = 'Incorrect CAPTCHA. Try again.';
+                    generateCaptcha();
+                    document.getElementById('captchaInput').value = '';
+                }
+            } catch (error) {
+                console.error('Error verifying CAPTCHA:', error);
+                document.getElementById('captchaError').textContent = 'Verification failed. Try again.';
+                generateCaptcha();
+            }
+        }
+
+        // Allow Enter key to verify CAPTCHA
+        document.getElementById('captchaInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                verifyCaptcha();
+            }
+        });
+
+        // ==================== GLOBAL STATS FUNCTIONS ====================
+
+        async function loadGlobalStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/stats`);
+                const data = await response.json();
+
+                document.getElementById('totalTests').textContent = data.total_tests;
+                document.getElementById('avgWpm').textContent = data.average_wpm;
+                document.getElementById('highestWpm').textContent = data.highest_wpm;
+            } catch (error) {
+                console.error('Error loading global stats:', error);
+            }
+        }
+
+        // ==================== LEADERBOARD FUNCTIONS ====================
+
+        async function submitToLeaderboard(wpm, accuracy, correctWords, errors, time) {
+            try {
+                const response = await fetch(`${API_URL}/api/leaderboard/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        wpm: wpm,
+                        accuracy: accuracy,
+                        correct_words: correctWords,
+                        errors: errors,
+                        time: time,
+                        date: new Date().toLocaleDateString()
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Score submitted to leaderboard:', data);
+                return data;
+            } catch (error) {
+                console.error('Error submitting to leaderboard:', error);
+            }
+        }
+
+        async function loadGlobalLeaderboard() {
+            try {
+                const response = await fetch(`${API_URL}/api/leaderboard/top?limit=10`);
+                const data = await response.json();
+
+                const leaderboardGrid = document.getElementById('leaderboardGrid');
+                leaderboardGrid.innerHTML = '';
+
+                if (data.count === 0) {
+                    leaderboardGrid.innerHTML = '<p style="text-align: center; color: #b0b0b0;">No scores yet. Be the first!</p>';
+                    return;
+                }
+
+                data.scores.forEach((score, index) => {
+                    const item = document.createElement('div');
+                    item.classList.add('history-item');
+                    
+                    const rankEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+                    
+                    item.innerHTML = `
+                        <div class="wpm">${rankEmoji} ${score.wpm} WPM</div>
+                        <div class="details">
+                            <span>Accuracy: ${score.accuracy}%</span>
+                            <span>${score.time}s</span>
+                        </div>
+                        <div class="details">
+                            <span>Errors: ${score.errors}</span>
+                            <span>${score.date}</span>
+                        </div>
+                    `;
+                    leaderboardGrid.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+            }
+        }
+
+        function showTab(tab) {
+            const personalHistory = document.getElementById('personalHistory');
+            const globalLeaderboard = document.getElementById('globalLeaderboard');
+            const tabs = document.querySelectorAll('.tab-btn');
+
+            tabs.forEach(t => t.classList.remove('active'));
+
+            if (tab === 'personal') {
+                personalHistory.style.display = 'block';
+                globalLeaderboard.style.display = 'none';
+                tabs[0].classList.add('active');
+            } else {
+                personalHistory.style.display = 'none';
+                globalLeaderboard.style.display = 'block';
+                tabs[1].classList.add('active');
+                loadGlobalLeaderboard();
+            }
+        }
+
+        // ==================== TEST FUNCTIONS ====================
+
+        function initTest() {
+            newParagraph();
+            loadGlobalStats();
+        }
+
+        function selectTime(time) {
+            if (testStarted) return;
+            
+            selectedTime = time;
+            timeLeft = time;
+            document.getElementById('timer').textContent = time;
+            
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function newParagraph() {
+            currentParagraph = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+            const textDisplay = document.getElementById('textDisplay');
+            textDisplay.innerHTML = '';
+            
+            currentParagraph.split('').forEach(char => {
+                const span = document.createElement('span');
+                span.textContent = char;
+                span.classList.add('char');
+                textDisplay.appendChild(span);
+            });
+            
+            textDisplay.firstChild.classList.add('current');
+            resetTest();
+        }
+
+        function startTest() {
+            document.getElementById('hero').style.display = 'none';
+            document.getElementById('testSection').classList.add('active');
+            document.getElementById('inputField').disabled = false;
+            document.getElementById('inputField').focus();
+            initTest();
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endTest();
+                }
+            }, 1000);
+        }
+
+        document.getElementById('inputField').addEventListener('input', (e) => {
+            if (!testStarted) {
+                testStarted = true;
+                isTestActive = true;
+                startTimer();
+            }
+
+            const inputValue = e.target.value;
+            const chars = document.querySelectorAll('.char');
+            
+            chars[charIndex]?.classList.remove('current');
+            
+            if (inputValue.length > charIndex) {
+                const currentChar = currentParagraph[charIndex];
+                const typedChar = inputValue[charIndex];
+                
+                if (typedChar === currentChar) {
+                    chars[charIndex].classList.add('correct');
+                    chars[charIndex].classList.remove('incorrect');
+                    correctChars++;
+                } else {
+                    chars[charIndex].classList.add('incorrect');
+                    chars[charIndex].classList.remove('correct');
+                    errors++;
+                }
+                
+                charIndex++;
+                chars[charIndex]?.classList.add('current');
+            } else if (inputValue.length < charIndex) {
+                charIndex--;
+                chars[charIndex].classList.remove('correct', 'incorrect');
+                chars[charIndex].classList.add('current');
+            }
+            
+            updateStats();
+            
+            if (charIndex >= currentParagraph.length) {
+                endTest();
+            }
+        });
+
+        function updateStats() {
+            const timeElapsed = (selectedTime - timeLeft) / 60;
+            const wordsTyped = correctChars / 5;
+            const wpm = timeElapsed > 0 ? Math.round(wordsTyped / timeElapsed) : 0;
+            const accuracy = charIndex > 0 ? Math.round((correctChars / charIndex) * 100) : 100;
+            
+            document.getElementById('wpm').textContent = wpm;
+            document.getElementById('accuracy').textContent = accuracy;
+            document.getElementById('errors').textContent = errors;
+        }
+
+        async function endTest() {
+            clearInterval(timerInterval);
+            isTestActive = false;
+            testStarted = false;
+            document.getElementById('inputField').disabled = true;
+            
+            const timeElapsed = (selectedTime - timeLeft) / 60;
+            const wordsTyped = correctChars / 5;
+            const finalWpm = timeElapsed > 0 ? Math.round(wordsTyped / timeElapsed) : 0;
+            const finalAccuracy = charIndex > 0 ? Math.round((correctChars / charIndex) * 100) : 100;
+            const correctWords = Math.floor(correctChars / 5);
+            
+            document.getElementById('finalWpm').textContent = finalWpm;
+            document.getElementById('finalAccuracy').textContent = finalAccuracy + '%';
+            document.getElementById('finalCorrect').textContent = correctWords;
+            document.getElementById('finalErrors').textContent = errors;
+            
+            // Save to localStorage
+            saveScore(finalWpm, finalAccuracy, correctWords, errors);
+            displayHistory();
+            
+            // Submit to backend leaderboard
+            await submitToLeaderboard(finalWpm, finalAccuracy, correctWords, errors, selectedTime);
+            
+            document.getElementById('testSection').classList.remove('active');
+            document.getElementById('resultsSection').classList.add('active');
+        }
+
+        function resetTest() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timeLeft = selectedTime;
+            charIndex = 0;
+            errors = 0;
+            correctChars = 0;
+            testStarted = false;
+            isTestActive = false;
+            
+            document.getElementById('timer').textContent = selectedTime;
+            document.getElementById('wpm').textContent = '0';
+            document.getElementById('accuracy').textContent = '100';
+            document.getElementById('errors').textContent = '0';
+            document.getElementById('inputField').value = '';
+            document.getElementById('inputField').disabled = false;
+            
+            document.querySelectorAll('.char').forEach(char => {
+                char.classList.remove('correct', 'incorrect', 'current');
+            });
+            document.querySelector('.char')?.classList.add('current');
+        }
+
+        function saveScore(wpm, accuracy, correctWords, errors) {
+            let scores = JSON.parse(localStorage.getItem('typingScores') || '[]');
+            
+            const newScore = {
+                wpm,
+                accuracy,
+                correctWords,
+                errors,
+                date: new Date().toLocaleDateString(),
+                time: selectedTime
+            };
+            
+            scores.unshift(newScore);
+            scores = scores.slice(0, 6);
+            
+            localStorage.setItem('typingScores', JSON.stringify(scores));
+        }
+
+        function displayHistory() {
+            const scores = JSON.parse(localStorage.getItem('typingScores') || '[]');
+            const historyGrid = document.getElementById('historyGrid');
+            historyGrid.innerHTML = '';
+            
+            if (scores.length === 0) {
+                historyGrid.innerHTML = '<p style="text-align: center; color: #b0b0b0;">No previous scores yet. Keep practicing!</p>';
+                return;
+            }
+            
+            const bestWpm = Math.max(...scores.map(s => s.wpm));
+            
+            scores.forEach(score => {
+                const item = document.createElement('div');
+                item.classList.add('history-item');
+                item.innerHTML = `
+                    <div class="wpm">${score.wpm} WPM ${score.wpm === bestWpm ? '<span class="best-badge">BEST</span>' : ''}</div>
+                    <div class="details">
+                        <span>Accuracy: ${score.accuracy}%</span>
+                        <span>${score.time}s</span>
+                    </div>
+                    <div class="details">
+                        <span>Errors: ${score.errors}</span>
+                        <span>${score.date}</span>
+                    </div>
+                `;
+                historyGrid.appendChild(item);
+            });
+        }
+
+        function retakeTest() {
+            document.getElementById('resultsSection').classList.remove('active');
+            showCaptcha();
+        }
+
+        function goHome() {
+            document.getElementById('resultsSection').classList.remove('active');
+            document.getElementById('hero').style.display = 'flex';
+            resetTest();
+            loadGlobalStats();
+        }
+
+        // Smooth scroll effect
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            document.querySelector('.hero').style.transform = `translateY(${scrolled * 0.5}px)`;
+        });
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initTest();
+        });
+    </script>
+</body>
+</html>
